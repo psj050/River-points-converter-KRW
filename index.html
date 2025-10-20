@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>River Points 환산 시뮬레이터</title>
+  <style>
+    :root{
+      --bg:#0f141a; --panel:#151b23; --text:#e6edf3; --muted:#9aa7b3; --accent:#4da3ff; --ok:#93e89b; --warn:#ffd479;
+    }
+    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Apple Color Emoji,Segoe UI Emoji}
+    body{margin:0;background:var(--bg);color:var(--text)}
+    .wrap{max-width:960px;margin:32px auto;padding:0 20px}
+    .card{background:var(--panel);border:1px solid #1f2937;border-radius:16px;padding:20px;margin-bottom:16px}
+    h1{font-size:24px;margin:0 0 8px}
+    p.desc{margin:0 0 16px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
+    input[type="number"], input[type="text"]{
+      width:100%;padding:12px;border-radius:12px;border:1px solid #2b3441;background:#0d1218;color:var(--text)
+    }
+    input[type="range"]{width:100%}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    button{
+      background:var(--accent);color:#031225;border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer
+    }
+    button.ghost{background:transparent;border:1px solid #334155;color:var(--text)}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    .kpi .box{background:#0d1218;border:1px solid #1f2937;border-radius:12px;padding:14px}
+    .kpi .val{font-size:18px;font-weight:700}
+    .small{font-size:12px;color:var(--muted)}
+    .big{font-size:28px;font-weight:800}
+    .right{justify-content:flex-end}
+    .note{color:var(--muted);font-size:12px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#0d1218;border:1px solid #243041;color:var(--muted);font-size:12px}
+    .footer{color:#6b7280;font-size:12px;margin-top:8px}
+    @media (max-width:720px){
+      .grid, .grid-3, .kpi{grid-template-columns:1fr}
+      .right{justify-content:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>River Points 환산 시뮬레이터</h1>
+    <p class="desc">보유한 River Points와 스테이킹 일수(0~180)를 입력하면, 실시간 <span class="badge">$River/USD</span> · <span class="badge">KRW/USD</span>를 반영해 예상 수익을 계산합니다.</p>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>보유한 River Points</label>
+          <input id="points" type="number" min="0" step="0.0001" placeholder="예) 12345.678" />
+        </div>
+        <div>
+          <label>스테이킹 일수 (0~180)</label>
+          <input id="days" type="range" min="0" max="180" value="0" />
+          <div class="row"><span class="small">선택: <span id="daysOut">0</span>일</span><span class="small">| Conversion Rate: <span id="rateOut">0.000000</span></span></div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:12px">
+        <div>
+          <label>$River/USD (자동 조회)</label>
+          <input id="riverUsd" type="text" placeholder="자동 조회 실패 시 직접 입력" />
+          <div class="note">CoinGecko에서 <b>river</b> 토큰 가격을 가져옵니다. 실패 시 직접 입력하세요.</div>
+        </div>
+        <div>
+          <label>KRW/USD 환율 (자동 조회)</label>
+          <input id="krwUsd" type="text" placeholder="자동 조회 실패 시 직접 입력" />
+          <div class="note">open.er-api.com의 USD 기준 환율을 사용합니다.</div>
+        </div>
+        <div>
+          <label>데이터 새로고침</label>
+          <div class="row">
+            <button id="refreshBtn">실시간 가격/환율 불러오기</button>
+            <button id="clearBtn" class="ghost">초기화</button>
+          </div>
+          <div class="small" id="lastUpdated">마지막 업데이트: -</div>
+        </div>
+      </div>
+
+      <div class="kpi">
+        <div class="box">
+          <div class="small">현재 $River/USD</div>
+          <div class="val" id="riverUsdOut">-</div>
+        </div>
+        <div class="box">
+          <div class="small">현재 KRW/USD</div>
+          <div class="val" id="krwUsdOut">-</div>
+        </div>
+        <div class="box">
+          <div class="small">Conversion Rate</div>
+          <div class="val" id="convRateOut">0.000000</div>
+          <div class="small">0일→0.000000 ~ 180일→0.030000</div>
+        </div>
+        <div class="box">
+          <div class="small">예상 수익(USD)</div>
+          <div class="val" id="payoutUsdOut">-</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row right">
+          <div>
+            <div class="small">예상 수익(KRW)</div>
+            <div class="big" id="payoutKrwOut">-</div>
+          </div>
+        </div>
+        <div class="footer">공식: <code>KRW = Points × ($River/USD) × (KRW/USD) × ConversionRate(days)</code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>변환율 설명 (이미지 그래프 기반 가정)</summary>
+        <p class="small">첨부 그래프를 선형 근사하여 <b>0일 → 0</b>, <b>180일 → 0.03</b>으로 가정했습니다.<br>
+        식: <code>rate = (days / 180) * 0.03</code></p>
+      </details>
+    </div>
+
+    <div class="footer">ⓒ 2025 River Points Calculator — MIT License</div>
+  </div>
+
+  <script>
+    // ====== 설정 ======
+    // CoinGecko 토큰 ID (필요 시 바꾸세요)
+    const COINGECKO_ID = "river"; // 예시: 'river'
+    const COINGECKO_URL = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(COINGECKO_ID)}&vs_currencies=usd`;
+    const FX_URL = "https://open.er-api.com/v6/latest/USD"; // KRW은 USD 기준 환율에서 KRW 값 사용
+
+    // ====== 엘리먼트 ======
+    const $points = document.getElementById('points');
+    const $days = document.getElementById('days');
+    const $daysOut = document.getElementById('daysOut');
+    const $rateOut = document.getElementById('rateOut');
+
+    const $riverUsd = document.getElementById('riverUsd');
+    const $krwUsd   = document.getElementById('krwUsd');
+
+    const $riverUsdOut = document.getElementById('riverUsdOut');
+    const $krwUsdOut   = document.getElementById('krwUsdOut');
+    const $convRateOut = document.getElementById('convRateOut');
+    const $payoutUsdOut= document.getElementById('payoutUsdOut');
+    const $payoutKrwOut= document.getElementById('payoutKrwOut');
+
+    const $refreshBtn = document.getElementById('refreshBtn');
+    const $clearBtn   = document.getElementById('clearBtn');
+    const $lastUpdated= document.getElementById('lastUpdated');
+
+    // ====== 유틸 ======
+    const fmt = (n, d=2) => {
+      if (n === null || n === undefined || isNaN(n)) return "-";
+      return Number(n).toLocaleString('ko-KR', {maximumFractionDigits:d});
+    };
+    const nowStr = () => new Date().toLocaleString('ko-KR');
+
+    function convRate(days){
+      // 0~180 → 0~0.03 선형
+      const d = Math.max(0, Math.min(180, Number(days)||0));
+      return (d/180)*0.03;
+    }
+
+    function calc(){
+      const points = Number($points.value || 0);
+      const days   = Number($days.value || 0);
+      const rate   = convRate(days);
+
+      // 가격/환율은 입력칸 → 숫자 변환
+      const riverUsd = Number($riverUsd.value);
+      const krwUsd   = Number($krwUsd.value);
+
+      // 계산
+      const usd = points * riverUsd * rate;
+      const krw = usd * krwUsd;
+
+      // 출력
+      $daysOut.textContent = fmt(days,0);
+      $rateOut.textContent = rate.toFixed(6);
+      $convRateOut.textContent = rate.toFixed(6);
+      $payoutUsdOut.textContent = fmt(usd, 4) + " USD";
+      $payoutKrwOut.textContent = fmt(krw, 0) + " 원";
+    }
+
+    // 입력 변화 → 재계산
+    [$points, $days, $riverUsd, $krwUsd].forEach($el => {
+      $el.addEventListener('input', calc);
+      $el.addEventListener('change', calc);
+    });
+
+    // ====== 외부 API ======
+    async function fetchRiverUsd(){
+      try{
+        const res = await fetch(COINGECKO_URL, { cache: "no-store" });
+        if(!res.ok) throw new Error("CoinGecko 응답 오류");
+        const j = await res.json();
+        const price = j?.[COINGECKO_ID]?.usd;
+        if(typeof price !== "number") throw new Error("가격 데이터 없음");
+        $riverUsd.value = String(price);
+        $riverUsdOut.textContent = fmt(price, 6) + " USD";
+        return price;
+      }catch(e){
+        console.warn(e);
+        $riverUsdOut.textContent = "자동 조회 실패 (직접 입력)";
+        return null;
+      }
+    }
+
+    async function fetchKrwPerUsd(){
+      try{
+        const res = await fetch(FX_URL, { cache: "no-store" });
+        if(!res.ok) throw new Error("환율 응답 오류");
+        const j = await res.json();
+        const krw = j?.rates?.KRW;
+        if(typeof krw !== "number") throw new Error("환율 데이터 없음");
+        $krwUsd.value = String(krw);
+        $krwUsdOut.textContent = fmt(krw, 2) + " ₩/USD";
+        return krw;
+      }catch(e){
+        console.warn(e);
+        $krwUsdOut.textContent = "자동 조회 실패 (직접 입력)";
+        return null;
+      }
+    }
+
+    async function refreshAll(){
+      $lastUpdated.textContent = "업데이트 중…";
+      await Promise.all([fetchRiverUsd(), fetchKrwPerUsd()]);
+      $lastUpdated.textContent = "마지막 업데이트: " + nowStr();
+      calc();
+    }
+
+    // 버튼
+    $refreshBtn.addEventListener('click', refreshAll);
+    $clearBtn.addEventListener('click', ()=>{
+      $points.value = "";
+      $days.value = 0;
+      $riverUsd.value = "";
+      $krwUsd.value = "";
+      $riverUsdOut.textContent = "-";
+      $krwUsdOut.textContent = "-";
+      $lastUpdated.textContent = "마지막 업데이트: -";
+      calc();
+    });
+
+    // 처음 로드 시 한번 가져오기
+    refreshAll();
+  </script>
+</body>
+</html>
