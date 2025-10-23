@@ -8,12 +8,62 @@
     :root{--bg:#0f141a;--panel:#151b23;--text:#e6edf3;--muted:#9aa7b3;--accent:#4da3ff}
     *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
     body{margin:0;background:var(--bg);color:var(--text)}
-    .wrap{max-width:960px;margin:32px auto;padding:0 20px}
+    .wrap{max-width:960px;margin:32px auto;padding:0 20px;position:relative}
+
+    /* ===== 헤더: 제목 + 버튼들(가로 병렬) ===== */
+    .header-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    h1{font-size:24px;margin:0;font-weight:800;color:var(--text)}
+    .right-buttons{display:flex;gap:10px;align-items:center}
+
+    /* 커피 버튼 + 툴팁 */
+    .tip-wrap{position:relative;display:inline-block}
+    .btn-coffee{
+      background:linear-gradient(135deg,#ffd18d,#ffb74d);
+      color:#2b1900;border:0;border-radius:999px;
+      padding:10px 14px;font-weight:800;
+      box-shadow:0 6px 14px rgba(255,183,77,.22);cursor:pointer;transition:.15s
+    }
+    .btn-coffee:hover{transform:translateY(-1px)}
+    .tip{
+      position:absolute;top:calc(100% + 6px);right:0;min-width:300px;max-width:80vw;
+      background:var(--panel);border:1px solid #2b3441;border-radius:12px;
+      padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);
+      opacity:0;transform:translateY(-4px);pointer-events:none;transition:.18s;z-index:10
+    }
+    .tip:before{
+      content:"";position:absolute;top:-7px;right:20px;width:14px;height:14px;
+      background:var(--panel);border-left:1px solid #2b3441;border-top:1px solid #2b3441;transform:rotate(45deg)
+    }
+    .tip-row{display:flex;align-items:center;gap:8px;white-space:nowrap}
+    .tip .muted{font-size:12px;color:var(--muted)}
+    .tip code{
+      font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;
+      background:#0d1218;border:1px solid #1f2937;border-radius:8px;padding:6px 8px;color:var(--text)
+    }
+    .tip .copy{
+      margin-left:auto;background:#1d2632;border:1px solid #2b3441;color:var(--text);
+      border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer
+    }
+    .tip-wrap:hover .tip,.tip-wrap.open .tip{opacity:1;transform:translateY(0);pointer-events:auto}
+    @media (max-width:520px){.tip{min-width:260px}}
+
+    /* X / Telegram 버튼(브랜드 컬러) */
+    .icon-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      padding:0 14px;height:40px;border-radius:999px;text-decoration:none;
+      font-size:14px;font-weight:600;color:#fff;box-shadow:0 6px 14px rgba(0,0,0,.25);transition:.15s
+    }
+    .icon-btn:hover{transform:translateY(-1px);opacity:.95}
+    .icon-btn svg{width:18px;height:18px;fill:currentColor}
+    .icon-btn.x{background:#000;border:1px solid #111}
+    .icon-btn.tg{background:#229ED9;border:1px solid #229ED9}
+
+    /* 카드/입력/표시 */
     .card{background:var(--panel);border:1px solid #1f2937;border-radius:16px;padding:20px;margin-bottom:16px}
-    h1{font-size:24px;margin:0 0 8px}
     .muted{color:var(--muted);font-size:13px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    @media (max-width:760px){.grid,.grid-3{grid-template-columns:1fr}}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
     input[type="number"],input[type="text"]{width:100%;padding:12px;border-radius:12px;border:1px solid #2b3441;background:#0d1218;color:var(--text)}
     input[type="range"]{width:100%}
@@ -24,181 +74,389 @@
     .kpi .box{background:#0d1218;border:1px solid #1f2937;border-radius:12px;padding:14px}
     .kpi .val{font-size:18px;font-weight:800}
     .big{font-size:28px;font-weight:900}
-    @media (max-width:760px){.grid,.grid-3,.kpi{grid-template-columns:1fr}}
+    iframe{width:100%;height:480px;border:0;border-radius:12px}
     .chart-toggle{display:flex;gap:8px;margin-bottom:12px}
     .chart-toggle button{flex:1;background:#1d2632;border:1px solid #2b3441;color:var(--muted)}
     .chart-toggle button.active{background:var(--accent);color:#001425;font-weight:700}
-    iframe{width:100%;height:480px;border:0;border-radius:12px}
+
+    /* 포인트 단가 미니 KPI */
+    .mini-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+    .mini-kpi .box{background:#0d1218;border:1px solid #1f2937;border-radius:12px;padding:14px}
+    .mini-kpi .val{font-size:18px;font-weight:800}
+    @media (max-width:760px){.mini-kpi{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>River Points 원화 계산기</h1>
-  <p class="muted">
-    계산식: <code>KRW = RiverPoints × ConversionRate(일) × (River/USDT) × (KRW/USDT)</code><br>
-    실시간 시세는 리버와 테더 각각 Bitget, Upbit의 API를 이용했습니다.<br>
-    $RIVER와 $River Pts 의 정보는 모두 PancakeSwap 기준입니다.
-  </p>
-
-  <!-- 수익 계산기 -->
-  <div class="card">
-    <div class="grid">
-      <div>
-        <label>보유한 River Points</label>
-        <input id="points" type="number" min="0" step="0.0001" placeholder="예) 10000" />
-      </div>
-      <div>
-        <label>스테이킹 일수 (0~180)</label>
-        <input id="days" type="range" min="0" max="180" value="0" step="1" />
-        <div class="muted">선택: <span id="daysOut">0</span>일 · Conversion Rate: <span id="rateOut">0.0000000</span> · vs Day1: <span id="vs1x">0x</span></div>
-      </div>
-    </div>
-
-    <div class="grid-3" style="margin-top:12px">
-      <div>
-        <label>$River/USDT (Bitget 실시간)</label>
-        <input id="riverUsdt" type="text" placeholder="예: 0.1234" />
-        <div class="muted" id="riverUsdtOut">-</div>
-      </div>
-      <div>
-        <label>KRW/USDT (Upbit 실시간)</label>
-        <input id="krwUsdt" type="text" placeholder="예: 1350" />
-        <div class="muted" id="krwUsdtOut">-</div>
-      </div>
-      <div>
-        <label>데이터</label>
-        <button id="refreshBtn">실시간 가격 불러오기</button>
-        <button class="ghost" id="clearBtn">초기화</button>
-        <div class="muted" id="lastUpdated">마지막 업데이트: -</div>
+  <div class="wrap">
+    <!-- 헤더(제목 + 버튼 3개 가로 병렬) -->
+    <div class="header-bar">
+      <h1>River Points 원화 계산기</h1>
+      <div class="right-buttons">
+        <!-- 커피 쏘기 -->
+        <div class="tip-wrap" id="coffeeWrap" aria-live="polite">
+          <button class="btn-coffee" id="coffeeBtn" aria-haspopup="true" aria-expanded="false">☕︎ Vision에게 커피 쏘기</button>
+          <div class="tip" id="coffeeTip" role="tooltip">
+            <div class="tip-row">
+              <span class="muted">지갑 주소</span>
+              <code id="walletAddr">0xYourWalletAddressHere</code>
+              <button class="copy" id="copyBtn" title="주소 복사">복사</button>
+            </div>
+          </div>
+        </div>
+        <!-- X -->
+        <a class="icon-btn x" href="https://x.com/@Vision_Crypt0" target="_blank" rel="noopener" aria-label="X로 이동">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2H21l-6.563 7.5L22 22h-6.756l-4.74-6.21L4.9 22H2l7.07-8.08L2 2h6.756l4.4 5.777L18.244 2Zm-2.376 18h2.073L8.214 4H6.142l9.726 16Z"/></svg>
+          X
+        </a>
+        <!-- Telegram -->
+        <a class="icon-btn tg" href="https://t.me/kartrider99" target="_blank" rel="noopener" aria-label="텔레그램으로 이동">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.03 15.22 8.86 19c.35 0 .5-.15.69-.33l1.66-1.6 3.44 2.52c.63.35 1.08.17 1.24-.58l2.25-10.57h.01c.2-.96-.35-1.34-.97-1.1L3.6 10.29c-.93.36-.92.88-.16 1.11l3.6 1.12 8.36-5.29c.39-.25.74-.11.45.16"/></svg>
+          Telegram
+        </a>
       </div>
     </div>
 
-    <div class="kpi">
-      <div class="box"><div class="muted">예상 수익(USDT)</div><div class="val" id="usdtOut">-</div></div>
-      <div class="box"><div class="muted">예상 수익(KRW)</div><div class="big" id="krwOut">-</div></div>
-      <div class="box"><div class="muted">Day1 기준 배수</div><div class="val" id="ratioOut">-</div></div>
+    <p class="muted">
+      계산식: <code>KRW = RiverPoints × ConversionRate(일) × (River/USDT) × (KRW/USDT)</code><br>
+      실시간 시세는 리버(Bitget), 테더(Upbit), 포인트(GeckoTerminal API)를 사용합니다.<br>
+      $RIVER와 $River Pts 의 정보는 모두 PancakeSwap 기준입니다.
+    </p>
+
+    <!-- 수익 계산기 -->
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>보유한 River Points</label>
+          <input id="points" type="number" min="0" step="0.0001" placeholder="예) 10000" />
+        </div>
+        <div>
+          <label>스테이킹 일수 (0~180)</label>
+          <input id="days" type="range" min="0" max="180" value="0" step="1" />
+          <div class="muted">선택: <span id="daysOut">0</span>일 · Conversion Rate: <span id="rateOut">0.0000000</span> · vs Day1: <span id="vs1x">0x</span></div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:12px">
+        <div>
+          <label>$RIVER / USDT (Bitget 실시간)</label>
+          <input id="riverUsdt" type="text" placeholder="예: 0.1234" />
+          <div class="muted" id="riverUsdtOut">-</div>
+        </div>
+        <div>
+          <label>KRW / USDT (Upbit 실시간)</label>
+          <input id="krwUsdt" type="text" placeholder="예: 1350" />
+          <div class="muted" id="krwUsdtOut">-</div>
+        </div>
+        <div>
+          <label>데이터</label>
+          <button id="refreshBtn">실시간 가격 불러오기</button>
+          <button class="ghost" id="clearBtn">초기화</button>
+          <div class="muted" id="lastUpdated">마지막 업데이트: -</div>
+        </div>
+      </div>
+
+      <div class="kpi">
+        <div class="box"><div class="muted">예상 수익(USDT)</div><div class="val" id="usdtOut">-</div></div>
+        <div class="box"><div class="muted">예상 수익(KRW)</div><div class="big" id="krwOut">-</div></div>
+        <div class="box"><div class="muted">Day1 기준 배수</div><div class="val" id="ratioOut">-</div></div>
+      </div>
     </div>
+
+    <!-- 포인트 단가 & 보유 시가 -->
+    <div class="card">
+      <h3 style="margin-top:0">포인트 단가 & 내 포인트 시가</h3>
+      <div class="mini-kpi">
+        <div class="box">
+          <div class="muted">1 RIVER Pts ≈</div>
+          <div class="val" id="price-usd">- USD</div>
+        </div>
+        <div class="box">
+          <div class="muted">1 RIVER Pts / KRW</div>
+          <div class="val" id="ptPriceKrw">- 원</div>
+        </div>
+        <div class="box">
+          <div class="muted">내 포인트 시가</div>
+          <div class="val" id="ptHoldingValue">- USD / - 원</div>
+        </div>
+      </div>
+      <p class="muted" id="ptNote">데이터 출처: GeckoTerminal(USD), Upbit(KRW/USDT)</p>
+    </div>
+
+    <!-- 차트 (GeckoTerminal 임베드) -->
+    <div class="card">
+      <div class="chart-toggle">
+        <button id="riverBtn" class="active">RIVER / USDT</button>
+        <button id="rptsBtn">RIVER Pts / USDT</button>
+      </div>
+      <div id="chartContainer">
+        <iframe id="chartFrame" src="" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <p class="muted">River Points Calculator — 2025 Vision</p>
   </div>
 
-  <!-- DexScreener 차트 -->
-  <div class="card">
-    <div class="chart-toggle">
-      <button id="riverBtn" class="active">RIVER / USDT</button>
-      <button id="rptsBtn">River Pts / USDT </button>
-    </div>
-    <div id="chartContainer">
-      <iframe id="chartFrame" src="https://dexscreener.com/bsc/0xda7ad9dea9397cffddae2f8a052b82f1484252b3?embed=1&theme=dark"></iframe>
-    </div>
-  </div>
+  <script>
+    /* =======================
+       상수 & 유틸
+    ======================= */
+    const TOKEN_RIVER = "0xda7ad9dea9397cffddae2f8a052b82f1484252b3"; // RIVER (BSC)
+    const TOKEN_RPTS  = "0xfc6be825925b7a83d131e33b46efef9084f0e014"; // RIVERPTS (BSC)
 
-  <p class="muted">River Points Calculator — 2025 Vision </p>
-</div>
+    // 가격 API
+    const BITGET_URL = "https://api.bitget.com/api/v2/spot/market/tickers?symbol=RIVERUSDT"; // RIVER/USDT
+    const UPBIT_URL  = "https://api.upbit.com/v1/ticker?markets=KRW-USDT";                   // KRW/USDT
 
-<script>
-  const BITGET_URL = "https://api.bitget.com/api/v2/spot/market/tickers?symbol=RIVERUSDT";
-  const UPBIT_URL = "https://api.upbit.com/v1/ticker?markets=KRW-USDT";
+    // GeckoTerminal Token/Pools API (키 불필요)
+    const GECKO_TOKEN_URL = (addr)=>`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${addr}`;
+    const GECKO_POOLS_URL = (addr)=>`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${addr}/pools?include=base_token,quote_token&page=1`;
+    const GECKO_POOL_IFRAME = (poolAddr)=>`https://www.geckoterminal.com/bsc/pools/${poolAddr}?embed=1&info=0&swaps=0`;
 
-  const $points=document.getElementById('points');
-  const $days=document.getElementById('days');
-  const $daysOut=document.getElementById('daysOut');
-  const $rateOut=document.getElementById('rateOut');
-  const $riverUsdt=document.getElementById('riverUsdt');
-  const $krwUsdt=document.getElementById('krwUsdt');
-  const $riverUsdtOut=document.getElementById('riverUsdtOut');
-  const $krwUsdtOut=document.getElementById('krwUsdtOut');
-  const $refreshBtn=document.getElementById('refreshBtn');
-  const $clearBtn=document.getElementById('clearBtn');
-  const $lastUpdated=document.getElementById('lastUpdated');
-  const $usdtOut=document.getElementById('usdtOut');
-  const $krwOut=document.getElementById('krwOut');
-  const $ratioOut=document.getElementById('ratioOut');
-  const $vs1x=document.getElementById('vs1x');
+    const fmt=(n,d=2)=>isNaN(n)?"-":Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
+    const nowStr=()=>new Date().toLocaleString('ko-KR');
 
-  const fmt=(n,d=2)=>isNaN(n)?"-":Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
-  const nowStr=()=>new Date().toLocaleString('ko-KR');
+    // Conversion Rate (0~90 선형 0→0.01, 90~180 선형 0.01→0.03)
+    function convRate(days){
+      const d=Math.max(0,Math.min(180,Number(days)||0));
+      if(d===0)return 0;
+      if(d<=90)return(d/90)*0.01;
+      return 0.01+((d-90)/90)*0.02;
+    }
+    const DAY1_RATE=convRate(1);
 
-  function convRate(days){
-    const d=Math.max(0,Math.min(180,Number(days)||0));
-    if(d===0)return 0;
-    if(d<=90)return(d/90)*0.01;
-    return 0.01+((d-90)/90)*0.02;
-  }
-  const DAY1_RATE=convRate(1);
+    /* =======================
+       DOM
+    ======================= */
+    const $points=document.getElementById('points');
+    const $days=document.getElementById('days');
+    const $daysOut=document.getElementById('daysOut');
+    const $rateOut=document.getElementById('rateOut');
+    const $riverUsdt=document.getElementById('riverUsdt');
+    const $krwUsdt=document.getElementById('krwUsdt');
+    const $riverUsdtOut=document.getElementById('riverUsdtOut');
+    const $krwUsdtOut=document.getElementById('krwUsdtOut');
+    const $refreshBtn=document.getElementById('refreshBtn');
+    const $clearBtn=document.getElementById('clearBtn');
+    const $lastUpdated=document.getElementById('lastUpdated');
+    const $usdtOut=document.getElementById('usdtOut');
+    const $krwOut=document.getElementById('krwOut');
+    const $ratioOut=document.getElementById('ratioOut');
+    const $vs1x=document.getElementById('vs1x');
 
-  function recalc(){
-    const pts=Number($points.value||0);
-    const d=Number($days.value||0);
-    const r=convRate(d);
-    const riverUsdt=Number($riverUsdt.value);
-    const krwUsdt=Number($krwUsdt.value);
-    const usdt=pts*r*riverUsdt;
-    const krw=usdt*krwUsdt;
-    const ratio=DAY1_RATE?(r/DAY1_RATE):0;
-    $daysOut.textContent=d.toFixed(0);
-    $rateOut.textContent=r.toFixed(6);
-    $vs1x.textContent=(ratio?ratio.toFixed(0):0)+"x";
-    $usdtOut.textContent=fmt(usdt,4)+" USDT";
-    $krwOut.textContent=fmt(krw,0)+" 원";
-    $ratioOut.textContent=ratio?ratio.toFixed(0)+"x":"-";
-  }
+    const priceUsdElement = document.getElementById('price-usd');
+    const $ptPriceKrw = document.getElementById('ptPriceKrw');
+    const $ptHoldingValue = document.getElementById('ptHoldingValue');
+    const $ptNote = document.getElementById('ptNote');
 
-  [$points,$days,$riverUsdt,$krwUsdt].forEach($el=>{
-    $el.addEventListener('input',recalc);
-    $el.addEventListener('change',recalc);
-  });
+    const riverBtn=document.getElementById('riverBtn');
+    const rptsBtn=document.getElementById('rptsBtn');
+    const chartFrame=document.getElementById('chartFrame');
 
-  async function fetchRiverUsdt(){
-    try{
-      const j=await fetch(BITGET_URL,{cache:"no-store"}).then(r=>r.json());
-      const ticker=j?.data?.[0];
-      const price=parseFloat(ticker?.lastPr);
-      if(typeof price!=="number"||isNaN(price))throw new Error("가격없음");
-      $riverUsdt.value=String(price);
-      $riverUsdtOut.textContent=`현재 River/USDT: ${fmt(price,6)} USDT (Bitget)`;
-    }catch(e){console.warn(e);$riverUsdtOut.textContent="자동 조회 실패 — 직접 입력";}
-  }
+    /* =======================
+       상태
+    ======================= */
+    let state={ riverUsdt:null, krwUsdt:null, rptsUsd:null };
 
-  async function fetchKrwPerUsdt(){
-    try{
-      const j=await fetch(UPBIT_URL,{cache:"no-store"}).then(r=>r.json());
-      const price=j?.[0]?.trade_price;
-      if(typeof price!=="number")throw new Error("환율없음");
-      $krwUsdt.value=String(price);
-      $krwUsdtOut.textContent=`현재 KRW/USDT: ${fmt(price,2)} ₩/USDT (Upbit)`;
-    }catch(e){console.warn(e);$krwUsdtOut.textContent="자동 조회 실패 — 직접 입력";}
-  }
+    /* =======================
+       계산 & 렌더
+    ======================= */
+    function recalc(){
+      const pts=Number($points.value||0);
+      const d=Number($days.value||0);
+      const r=convRate(d);
+      const riverUsdt=Number($riverUsdt.value);
+      const krwUsdt=Number($krwUsdt.value);
 
-  async function refreshAll(){
-    $lastUpdated.textContent="업데이트 중…";
-    await Promise.all([fetchRiverUsdt(),fetchKrwPerUsdt()]);
-    $lastUpdated.textContent="마지막 업데이트: "+nowStr();
-    recalc();
-  }
+      const usdt=pts*r*riverUsdt;
+      const krw=usdt*krwUsdt;
+      const ratio=DAY1_RATE?(r/DAY1_RATE):0;
 
-  document.getElementById('refreshBtn').addEventListener('click',refreshAll);
-  document.getElementById('clearBtn').addEventListener('click',()=>{
-    $points.value="";$days.value=0;$riverUsdt.value="";$krwUsdt.value="";
-    $riverUsdtOut.textContent="-";$krwUsdtOut.textContent="-";$lastUpdated.textContent="마지막 업데이트: -";
-    recalc();
-  });
+      $daysOut.textContent=d.toFixed(0);
+      $rateOut.textContent=r.toFixed(6);
+      $vs1x.textContent=(ratio?ratio.toFixed(0):0)+"x";
+      $usdtOut.textContent=fmt(usdt,4)+" USDT";
+      $krwOut.textContent=fmt(krw,0)+" 원";
+      $ratioOut.textContent=ratio?ratio.toFixed(0)+"x":"-";
 
-  const riverBtn=document.getElementById('riverBtn');
-  const rptsBtn=document.getElementById('rptsBtn');
-  const chartFrame=document.getElementById('chartFrame');
+      renderRptsSection();
+    }
 
-  riverBtn.onclick=()=>{
-    riverBtn.classList.add('active');
-    rptsBtn.classList.remove('active');
-    chartFrame.src="https://dexscreener.com/bsc/0xda7ad9dea9397cffddae2f8a052b82f1484252b3?embed=1&theme=dark";
-  };
+    function renderRptsSection(){
+      const rptsUsd = Number(state.rptsUsd||0);
+      const fx = Number($krwUsdt.value || state.krwUsdt || 0);
+      const pts = Number($points.value||0);
 
-  rptsBtn.onclick=()=>{
-    rptsBtn.classList.add('active');
-    riverBtn.classList.remove('active');
-    chartFrame.src="https://dexscreener.com/bsc/0xfc6be825925b7a83d131e33b46efef9084f0e014?embed=1&theme=dark";
-  };
+      if(rptsUsd>0){
+        priceUsdElement.innerHTML = `1 RIVER Pts ≈ <strong>$${fmt(rptsUsd,8)}</strong>`;
+        if(fx>0){
+          const perKrw = rptsUsd * fx;
+          $ptPriceKrw.textContent = `${fmt(perKrw,0)} 원`;
+          const totalUsd = rptsUsd * pts;
+          const totalKrw = perKrw * pts;
+          $ptHoldingValue.textContent = `${fmt(totalUsd,4)} USD / ${fmt(totalKrw,0)} 원`;
+        }else{
+          $ptPriceKrw.textContent = "- 원";
+          $ptHoldingValue.textContent = `${fmt(rptsUsd*pts,4)} USD / - 원`;
+        }
+      }else{
+        priceUsdElement.textContent = "- USD";
+        $ptPriceKrw.textContent = "- 원";
+        $ptHoldingValue.textContent = "- USD / - 원";
+      }
+    }
 
-  refreshAll();
-</script>
+    /* =======================
+       Fetchers
+    ======================= */
+    async function fetchRiverUsdt(){
+      try{
+        const j=await fetch("https://api.bitget.com/api/v2/spot/market/tickers?symbol=RIVERUSDT",{cache:"no-store"}).then(r=>r.json());
+        const price=parseFloat(j?.data?.[0]?.lastPr);
+        if(isFinite(price)){
+          state.riverUsdt=price;
+          $riverUsdt.value=String(price);
+          $riverUsdtOut.textContent=`현재 RIVER/USDT: ${fmt(price,6)} (Bitget)`;
+        } else {
+          $riverUsdtOut.textContent="자동 조회 실패 — 직접 입력";
+        }
+      }catch(e){console.warn(e);$riverUsdtOut.textContent="자동 조회 실패 — 직접 입력";}
+    }
+
+    async function fetchKrwPerUsdt(){
+      try{
+        const j=await fetch("https://api.upbit.com/v1/ticker?markets=KRW-USDT",{cache:"no-store"}).then(r=>r.json());
+        const price=j?.[0]?.trade_price;
+        if(typeof price==="number"){
+          state.krwUsdt=price;
+          $krwUsdt.value=String(price);
+          $krwUsdtOut.textContent=`현재 KRW/USDT: ${fmt(price,2)} ₩/USDT (Upbit)`;
+        } else {
+          $krwUsdtOut.textContent="자동 조회 실패 — 직접 입력";
+        }
+      }catch(e){console.warn(e);$krwUsdtOut.textContent="자동 조회 실패 — 직접 입력";}
+    }
+
+    // GeckoTerminal: RIVERPTS USD 가격
+    async function fetchRptsUsdFromGecko(){
+      try{
+        const res = await fetch(GECKO_TOKEN_URL(TOKEN_RPTS), {cache:"no-store"});
+        if(!res.ok) throw new Error("Gecko token api "+res.status);
+        const j = await res.json();
+        const usd = parseFloat(j?.data?.attributes?.price_usd);
+        if(isFinite(usd)){
+          state.rptsUsd = usd;
+          $ptNote.textContent = "데이터 출처: GeckoTerminal(USD), Upbit(KRW/USDT)";
+        }else{
+          state.rptsUsd = null;
+        }
+      }catch(e){
+        console.warn("GeckoTerminal token price 실패:", e);
+        state.rptsUsd = null;
+      }
+    }
+
+    // GeckoTerminal: 토큰의 주요 풀 선택 (USDT/BUSD 우선 → 유동성 최대)
+    async function pickBestGeckoPool(tokenAddr){
+      const res = await fetch(GECKO_POOLS_URL(tokenAddr), {cache:"no-store"});
+      if(!res.ok) throw new Error("Gecko pools api "+res.status);
+      const j = await res.json();
+      const pools = Array.isArray(j?.data) ? j.data : [];
+      if(!pools.length) throw new Error("no pools");
+
+      const withMeta = pools.map(p => {
+        const base = j?.included?.find(i => i.id === p?.relationships?.base_token?.data?.id);
+        const quote = j?.included?.find(i => i.id === p?.relationships?.quote_token?.data?.id);
+        return { address:p?.attributes?.address, base, quote, raw:p };
+      });
+
+      let target = withMeta.find(p => (p?.quote?.attributes?.symbol||"").toUpperCase()==="USDT")
+               || withMeta.find(p => (p?.quote?.attributes?.symbol||"").toUpperCase()==="BUSD");
+
+      if(!target){
+        target = withMeta.slice().sort((a,b)=>{
+          const av = Number(a?.raw?.attributes?.reserve_in_usd||0);
+          const bv = Number(b?.raw?.attributes?.reserve_in_usd||0);
+          return bv-av;
+        })[0];
+      }
+      if(!target?.address) throw new Error("no pool address");
+      return target.address;
+    }
+
+    async function refreshAll(){
+      $lastUpdated.textContent="업데이트 중…";
+      await Promise.all([fetchRiverUsdt(), fetchKrwPerUsdt(), fetchRptsUsdFromGecko()]);
+      $lastUpdated.textContent="마지막 업데이트: "+nowStr();
+      recalc();
+    }
+
+    /* =======================
+       차트 전환 (GeckoTerminal 임베드)
+    ======================= */
+    function setActive(on, off){ on.classList.add('active'); off.classList.remove('active'); }
+
+    async function loadChartForToken(tokenAddr){
+      try{
+        const pool = await pickBestGeckoPool(tokenAddr);
+        chartFrame.src = GECKO_POOL_IFRAME(pool);
+      }catch(e){
+        console.warn("차트 로드 실패:", e);
+        chartFrame.src = `https://www.geckoterminal.com/bsc/tokens/${tokenAddr}?embed=1`;
+      }
+    }
+
+    riverBtn.onclick = ()=>{ setActive(riverBtn, rptsBtn); loadChartForToken(TOKEN_RIVER); };
+    rptsBtn.onclick  = ()=>{ setActive(rptsBtn, riverBtn); loadChartForToken(TOKEN_RPTS); };
+
+    /* =======================
+       초기 실행
+    ======================= */
+    [$points,$days,$riverUsdt,$krwUsdt].forEach($el=>{
+      $el.addEventListener('input', recalc);
+      $el.addEventListener('change', recalc);
+    });
+    document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+    document.getElementById('clearBtn').addEventListener('click', ()=>{
+      $points.value=""; $days.value=0; $riverUsdt.value=""; $krwUsdt.value="";
+      $riverUsdtOut.textContent="-"; $krwUsdtOut.textContent="-"; $lastUpdated.textContent="마지막 업데이트: -";
+      recalc();
+    });
+
+    (async () => {
+      await refreshAll();
+      await loadChartForToken(TOKEN_RIVER);
+    })();
+  </script>
+
+  <!-- ☕︎ 커피 버튼: 호버 끊김 방지(지연 닫힘) + 복사 -->
+  <script>
+    const WALLET_ADDRESS = "0x6D4dA73e9780FaCe848305961e49D19d310239d1"; 
+    const coffeeWrap = document.getElementById("coffeeWrap");
+    const coffeeBtn  = document.getElementById("coffeeBtn");
+    const walletAddr = document.getElementById("walletAddr");
+    const copyBtn    = document.getElementById("copyBtn");
+    walletAddr.textContent = WALLET_ADDRESS;
+
+    let tipOpen=false, closeTimer=null;
+    function openTip(){ clearTimeout(closeTimer); tipOpen=true; coffeeWrap.classList.add("open"); coffeeBtn.setAttribute("aria-expanded","true"); }
+    function closeTip(){ closeTimer=setTimeout(()=>{ tipOpen=false; coffeeWrap.classList.remove("open"); coffeeBtn.setAttribute("aria-expanded","false"); },120); }
+
+    coffeeWrap.addEventListener("mouseenter", openTip);
+    coffeeWrap.addEventListener("mouseleave", closeTip);
+    coffeeBtn.addEventListener("click", (e)=>{ e.preventDefault(); tipOpen?closeTip():openTip(); });
+    document.addEventListener("click", (e)=>{ if(!coffeeWrap.contains(e.target) && tipOpen) closeTip(); });
+
+    copyBtn.addEventListener("click", async ()=>{
+      try{
+        await navigator.clipboard.writeText(WALLET_ADDRESS);
+        const old=copyBtn.textContent; copyBtn.textContent="복사됨!";
+        setTimeout(()=>copyBtn.textContent=old,1200);
+      }catch(e){
+        const r=document.createRange(); r.selectNodeContents(walletAddr);
+        const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        alert("클립보드 권한이 차단되어 주소를 선택했어요. 복사(Ctrl/Cmd+C) 해주세요.");
+      }
+    });
+  </script>
 </body>
 </html>
